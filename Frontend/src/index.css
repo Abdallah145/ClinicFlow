@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+@theme {
+  --color-primary: #0046ad; /* حط اللون بتاعك هنا */
+}
+
+.active hr{
+    @apply block w-full bg-[#0046ad] rounded-lg;
+}
+.active li{
+    @apply text-[#0046ad] ;
+}
