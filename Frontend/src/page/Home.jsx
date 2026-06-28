@@ -1,9 +1,16 @@
 /* eslint-disable no-unused-vars */
 import React from 'react'
+import Header from '../components/Header'
+import SpecialityMenu from '../components/SpecialityMenu'
 
 const Home = () => {
   return (
-    <div className='text-red-800  bg-fuchsia-500 ' >Homddddddddddddddde</div>
+    <div >
+
+      <Header />
+      <SpecialityMenu />
+    </div>
+    
   )
 }
 
