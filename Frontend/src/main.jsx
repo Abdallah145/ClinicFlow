@@ -6,10 +6,13 @@ import { BrowserRouter } from 'react-router-dom'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import './index.css'
-import runFullIdentityTest from './backendAutomatedTest.js' // Backend test
+import { runIdentityTest , runClinicalTest } from './backendAutomatedTest.js' // Backend test
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <App />
   </BrowserRouter>,
 )
+
+runIdentityTest () ;
+runClinicalTest () ;
