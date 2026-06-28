@@ -30,22 +30,53 @@ export const registerPatient = async (email, password, fullName, phone) => {
 };
 
 /**
- * 2. UNIVERSAL LOGIN
- * Logs the user in and retrieves their specific role to handle dashboard redirection.
+ * 2. ADMIN-LED DOCTOR REGISTRATION
+ * Allows a logged-in Admin to create an account for a new Doctor.
+ * Saves the doctor's profile with a strict 'doctor' role and their medical specialty.
+ */
+export const registerDoctor = async (email, password, fullName, phone, specialty) => {
+  try {
+    // 1. Create the authentication record in Firebase
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+
+    // 2. Create the matching profile document in the 'users' collection
+    await setDoc(doc(db, "users", user.uid), {
+      uid: user.uid,
+      name: fullName,
+      email: email,
+      phone: phone,
+      role: "doctor", // Strictly tags their role
+      specialty: specialty, // Extra field specific to doctors
+      createdAt: new Date()
+    });
+
+    return { success: true, uid: user.uid };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 3. UNIVERSAL LOGIN & ROLE RETRIEVAL
+ * Logs in any user (Patient, Doctor, or Admin) and fetches their database 
+ * profile so the React router can immediately redirect them to the correct dashboard.
  */
 export const loginUser = async (email, password) => {
   try {
+    // 1. Authenticate the email and password credentials
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Fetch their profile document to find out their role
+    // 2. Fetch the user's matching document from the 'users' collection
     const userDoc = await getDoc(doc(db, "users", user.uid));
     
     if (userDoc.exists()) {
       const userData = userDoc.data();
-      return { success: true, role: userData.role, user };
+      // Return the role along with success so the frontend team can read it instantly
+      return { success: true, role: userData.role, uid: user.uid, name: userData.name };
     } else {
-      throw new Error("User profile data not found.");
+      throw new Error("User registration profile data was not found.");
     }
   } catch (error) {
     return { success: false, error: error.message };
