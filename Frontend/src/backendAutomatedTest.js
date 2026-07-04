@@ -1,9 +1,12 @@
-// TEMPORARY DUAL ARCHITECTURE TEST BLOCK
 import { registerPatient, loginUser } from "./authService";
+import { bookAppointment, saveMedicalRecord, getPatientMedicalRecord } from "./clinicService";
 
-const runFullIdentityTest = async () => {
-  console.log("🚀 Step 1: Registering fresh patient profile...");
-  const uniqueEmail = `john_dev_${Date.now()}@clinicflow.com`; // Guarantees a fresh account every single reload
+/**
+ * TEST 1: Full Identity Flow (Registration + Login Profile Check)
+ */
+export const runIdentityTest = async () => {
+  console.log("🚀 [TEST] Starting Identity Pipeline Test...");
+  const uniqueEmail = `john_dev_${Date.now()}@clinicflow.com`; 
   
   const regResult = await registerPatient(
     uniqueEmail,
@@ -13,21 +16,42 @@ const runFullIdentityTest = async () => {
   );
 
   if (regResult.success) {
-    console.log("✅ Registration Successful! UID:", regResult.user.uid);
-    console.log("🔒 Step 2: Attempting universal login with new profile...");
+    console.log("✅ [TEST] Registration Successful! UID:", regResult.user.uid);
+    console.log("🔒 [TEST] Attempting universal login with new profile...");
     
-    // Now let's try logging in with the freshly minted account
     const loginResult = await loginUser(uniqueEmail, "securepassword123");
-    
     if (loginResult.success) {
-      console.log("🎯 DUAL TEST SUCCESS! Logged in user role is:", loginResult.role.toUpperCase());
-      console.log("👋 Welcome back,", loginResult.name);
+      console.log("🎯 [TEST] IDENTITY SUCCESS! Logged in role:", loginResult.role.toUpperCase());
+      console.log("👋 [TEST] Welcome back,", loginResult.name);
     } else {
-      console.error("❌ Login Step Failed:", loginResult.error);
+      console.error("❌ [TEST] Login Step Failed:", loginResult.error);
     }
   } else {
-    console.error("❌ Registration Step Failed:", regResult.error);
+    console.error("❌ [TEST] Registration Step Failed:", regResult.error);
   }
 };
 
-export default runFullIdentityTest ;
+/**
+ * TEST 2: Clinical Operations Flow (Firestore Write + Read Check)
+ */
+export const runClinicalTest = async () => {
+  console.log("⚙️ [TEST] Starting Clinical Database Pipeline Test...");
+  const dummyPatientUID = `mockPatient_${Date.now()}`;
+
+  console.log("📝 [TEST] Writing medical record file...");
+  const recordRes = await saveMedicalRecord(dummyPatientUID, {
+    bloodType: "B+",
+    allergies: ["NSAIDs"],
+    history: [{ date: "2026-06-28", diagnosis: "Chronic fatigue check up", doctorName: "Dr. Sherif" }]
+  });
+
+  if (recordRes.success) {
+    console.log("✅ [TEST] Medical Record mapped to Firestore successfully!");
+    console.log("🔍 [TEST] Testing real-time file retrieval tracking...");
+    
+    const fetchRes = await getPatientMedicalRecord(dummyPatientUID);
+    console.log("📊 [TEST] CLINICAL SUCCESS! Cloud Record Data:", fetchRes.data);
+  } else {
+    console.error("❌ [TEST] Clinical Pipeline Failed:", recordRes.error);
+  }
+};

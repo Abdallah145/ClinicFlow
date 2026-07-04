@@ -10,6 +10,7 @@ import runFullIdentityTest from './backendAutomatedTest.js' // Backend test
 import {AppContextProvider} from './context/AppContext.jsx'
 
   
+import { runIdentityTest , runClinicalTest } from './backendAutomatedTest.js' // Backend test
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
@@ -18,3 +19,6 @@ createRoot(document.getElementById('root')).render(
     </AppContextProvider>
   </BrowserRouter>,
 )
+
+runIdentityTest () ;
+runClinicalTest () ;
