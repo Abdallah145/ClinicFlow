@@ -1,5 +1,5 @@
 import { auth, db } from "./firebaseConfig"; 
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
 /**
@@ -78,6 +78,19 @@ export const loginUser = async (email, password) => {
     } else {
       throw new Error("User registration profile data was not found.");
     }
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * 4. SESSION TERMINATION
+ * Clears the active authentication state tracking token from the client browser session.
+ */
+export const logoutUser = async () => {
+  try {
+    await signOut(auth);
+    return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
   }
