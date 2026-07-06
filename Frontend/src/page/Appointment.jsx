@@ -8,6 +8,7 @@ import RelatedDoctors from '../components/RelatedDoctors';
 const Appointment = () => {
     const { docId } = useParams();
     const navigate = useNavigate();
+    const Maps = (path) => navigate(path);
     const { bookAppointment } = useContext(AppContext);
     const [docInfo, setDocInfo] = useState(null);
     const isLoggedIn = true;
@@ -152,13 +153,21 @@ const Appointment = () => {
                             return;
                         }
 
-                        if (!slotTime || !selectedDate) return;
+                        if (!slotTime) {
+                            toast.warn('Please select a time slot before booking.');
+                            return;
+                        }
+
+                        if (!selectedDate) {
+                            toast.warn('Please select a date before booking.');
+                            return;
+                        }
 
                         bookAppointment(docInfo, selectedDate, slotTime);
                         toast.success('Appointment Booked');
 
                         setTimeout(() => {
-                            navigate('/my-appointment');
+                            Maps('/my-appointment');
                         }, 1500);
                     }}
                     className="bg-primary cursor-pointer text-white text-sm font-light px-14 py-3 rounded-full mt-6 hover:opacity-90"

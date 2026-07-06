@@ -11,6 +11,7 @@ import MyProfile from "./page/MyProfile.jsx";
 import MyAppointments from "./page/MyAppointments.jsx";
 import Appointment from "./page/Appointment.jsx";
 import Footer from "./components/Footer.jsx";
+import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
 import DoctorDashboard from "./views/DoctorDashboard";
@@ -19,6 +20,7 @@ import DoctorDashboard from "./views/DoctorDashboard";
 const App = () => {
   return (
     <div>
+      <ToastContainer />
       <div className="mx-4 sm:mx-[10%]">
         <Navbar />
         <Routes>
