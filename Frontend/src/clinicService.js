@@ -8,7 +8,9 @@ import {
   getDocs, 
   query, 
   where, 
-  orderBy 
+  orderBy,
+  updateDoc, 
+  onSnapshot
 } from "firebase/firestore";
 
 /**
@@ -94,5 +96,61 @@ export const getPatientMedicalRecord = async (patientId) => {
     }
   } catch (error) {
     return { success: false, error: error.message };
+  }
+};
+
+
+
+/**
+ * 5. UPDATE APPOINTMENT STATUS (Queue Control Feature)
+ * Modifies an individual appointment's state as it moves through the clinic workflow.
+ */
+export const updateAppointmentStatus = async (appointmentId, newStatus) => {
+  try {
+    const appointmentRef = doc(db, "appointments", appointmentId);
+    await updateDoc(appointmentRef, { 
+      status: newStatus, 
+      updatedAt: new Date() 
+    });
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+};
+
+
+/**
+ * 6. REAL-TIME DOCTOR QUEUE STREAM (Live Dashboard Feature)
+ * Establishes a persistent live socket listener for a specific doctor's queue.
+ * Returns an unsubscribe function to clean up the listener when the component unmounts.
+ */
+export const subscribeToDoctorQueue = (doctorId, callback) => {
+  try {
+    const appointmentsRef = collection(db, "appointments");
+    
+    // Complex query: Filters by doctor and status, then sorts chronologically
+    const q = query(
+      appointmentsRef,
+      where("doctorId", "==", doctorId),
+      where("status", "in", ["pending", "active"]),
+      orderBy("createdAt", "asc")
+    );
+
+    // Return the active snapshot listener stream
+    return onSnapshot(
+      q,
+      (querySnapshot) => {
+        const appointments = [];
+        querySnapshot.forEach((doc) => {
+          appointments.push({ id: doc.id, ...doc.data() });
+        });
+        callback({ success: true, appointments });
+      },
+      (error) => {
+        callback({ success: false, error: error.message });
+      }
+    );
+  } catch (error) {
+    callback({ success: false, error: error.message });
   }
 };
