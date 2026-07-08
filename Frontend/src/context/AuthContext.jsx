@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 import { auth, db } from "../firebaseConfig";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
@@ -26,8 +26,6 @@ export const AuthProvider = ({ children }) => {
       }
       setLoading(false);
     });
-    
-    // Clean up open socket stream on component unmount
     return unsubscribe;
   }, []);
 
