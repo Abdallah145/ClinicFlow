@@ -1,4 +1,4 @@
-import { auth, db } from "./firebaseConfig"; 
+import { auth, db } from "./firebaseConfig";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
@@ -14,7 +14,7 @@ export const registerPatient = async (email, password, fullName, phone) => {
 
     // Save the user profile details into the Firestore 'users' collection
     // We use user.uid as the document ID to link Auth and Database together
-    await setDoc(doc(db, "users", user.uid), {  
+    await setDoc(doc(db, "users", user.uid), {
       uid: user.uid,
       name: fullName,
       email: email,
@@ -30,24 +30,32 @@ export const registerPatient = async (email, password, fullName, phone) => {
 };
 
 /**
- * 2. ADMIN-LED DOCTOR REGISTRATION
- * Allows a logged-in Admin to create an account for a new Doctor.
- * Saves the doctor's profile with a strict 'doctor' role and their medical specialty.
+ * 2. ADMIN-LED DOCTOR REGISTRATION (Upgraded for UI Fields)
+ * Allows a logged-in Admin to create an account for a new Doctor with full profile metadata.
  */
-export const registerDoctor = async (email, password, fullName, phone, specialty) => {
+export const registerDoctor = async (email, password, doctorData) => {
   try {
     // 1. Create the authentication record in Firebase
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // 2. Create the matching profile document in the 'users' collection
+    // 2. Create the complete profile matching the Admin Panel form fields
     await setDoc(doc(db, "users", user.uid), {
       uid: user.uid,
-      name: fullName,
+      name: doctorData.fullName,
       email: email,
-      phone: phone,
-      role: "doctor", // Strictly tags their role
-      specialty: specialty, // Extra field specific to doctors
+      phone: doctorData.phone,
+      role: "doctor",
+      specialty: doctorData.specialty,
+      education: doctorData.education || "",
+      experience: doctorData.experience || "",
+      fees: doctorData.fees || "",
+      about: doctorData.about || "",
+      address: {
+        line1: doctorData.addressLine1 || "",
+        line2: doctorData.addressLine2 || ""
+      },
+      available: true, // Used to toggle availability status on cards
       createdAt: new Date()
     });
 
@@ -70,7 +78,7 @@ export const loginUser = async (email, password) => {
 
     // 2. Fetch the user's matching document from the 'users' collection
     const userDoc = await getDoc(doc(db, "users", user.uid));
-    
+
     if (userDoc.exists()) {
       const userData = userDoc.data();
       // Return the role along with success so the frontend team can read it instantly
