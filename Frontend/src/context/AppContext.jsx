@@ -19,7 +19,7 @@ export const AppContextProvider = (props) => {
   };
 
   const value = {
-    doctors,
+    doctors,  //getDoctorsData,
     appointments,
     setAppointments,
     bookAppointment,
