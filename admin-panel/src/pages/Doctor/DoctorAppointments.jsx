@@ -1,140 +1,186 @@
-import React, { useEffect, useState } from 'react';
-import { assets } from '../../assets/assets';
-// import { db } from '../../firebase'; // تأكد من المسار
-// import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import React, { useEffect, useState } from "react";
+import { assets } from "../../assets/assets";
+import { auth, db } from "../../firebaseConfig";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
 
 const DoctorAppointments = () => {
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const [appointments, setAppointments] = useState([]);
+  const getAppointments = async () => {
+    const currentDoctor = auth.currentUser;
 
-    // ✅ حساب العمر بشكل صحيح
-    const calculateAge = (dob) => {
-        const today = new Date();
-        const birthDate = new Date(dob);
+    if (!currentDoctor) {
+      setLoading(false);
+      return;
+    }
 
-        let age = today.getFullYear() - birthDate.getFullYear();
-        const m = today.getMonth() - birthDate.getMonth();
+    try {
+      setLoading(true);
 
-        if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-            age--;
-        }
+      // يجيب فقط الحجوزات التي doctorId فيها يساوي UID الدكتور المسجل
+      const appointmentsQuery = query(
+        collection(db, "appointments"),
+        where("doctorId", "==", currentDoctor.uid)
+      );
 
-        return age;
-    };
+      const snapshot = await getDocs(appointmentsQuery);
 
-    // ✅ جلب البيانات من Firebase
-    const getAppointments = async () => {
-        const snapshot = await getDocs(collection(db, "appointments"));
-        const data = snapshot.docs.map(doc => ({
-            _id: doc.id,
-            ...doc.data()
-        }));
-        setAppointments(data);
-    };
+      const appointmentsData = snapshot.docs.map((appointmentDoc) => ({
+        id: appointmentDoc.id,
+        ...appointmentDoc.data(),
+      }));
 
-    // ✅ إلغاء الحجز
-    const cancelAppointment = async (id) => {
-        const ref = doc(db, "appointments", id);
-        await updateDoc(ref, { cancelled: true });
-        getAppointments();
-    };
+      setAppointments(appointmentsData);
+    } catch (error) {
+      console.error("Error getting doctor appointments:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    // ✅ إتمام الحجز
-    const completeAppointment = async (id) => {
-        const ref = doc(db, "appointments", id);
-        await updateDoc(ref, { isCompleted: true });
-        getAppointments();
-    };
+  const cancelAppointment = async (appointmentId) => {
+    try {
+      await updateDoc(doc(db, "appointments", appointmentId), {
+        status: "cancelled",
+        updatedAt: new Date(),
+      });
 
-    useEffect(() => {
-        getAppointments();
-    }, []);
+      getAppointments();
+    } catch (error) {
+      console.error("Error cancelling appointment:", error);
+    }
+  };
 
-    return (
-        <div className='m-5 w-full'>
-            <p className='mb-3 text-lg font-medium text-gray-700'>All Appointments</p>
+  const completeAppointment = async (appointmentId) => {
+    try {
+      await updateDoc(doc(db, "appointments", appointmentId), {
+        status: "completed",
+        updatedAt: new Date(),
+      });
 
-            <div className='bg-white border rounded text-sm max-h-[80vh] min-h-[50vh] overflow-y-scroll shadow-sm'>
-                
-                {/* Header */}
-                <div className='hidden sm:grid grid-cols-[0.5fr_2fr_1fr_1fr_3fr_1fr_1fr] gap-1 py-3 px-6 border-b bg-gray-50 text-gray-600 font-medium'>
-                    <p>#</p>
-                    <p>Patient</p>
-                    <p>Payment</p>
-                    <p>Age</p>
-                    <p>Date & Time</p>
-                    <p>Fees</p>
-                    <p>Action</p>
-                </div>
+      getAppointments();
+    } catch (error) {
+      console.error("Error completing appointment:", error);
+    }
+  };
 
-                {/* Data */}
-                {appointments.length === 0 ? (
-                    <p className='text-center py-5 text-gray-400'>No Appointments Found</p>
-                ) : (
-                    appointments.map((item, index) => (
-                        <div 
-                            key={item._id} 
-                            className='grid grid-cols-[1fr_3fr_1fr] sm:grid-cols-[0.5fr_2fr_1fr_1fr_3fr_1fr_1fr] gap-1 items-center text-gray-500 py-3 px-6 border-b hover:bg-gray-50 transition-all'
-                        >
-                            <p className='hidden sm:block'>{index + 1}</p>
-                            
-                            {/* Patient */}
-                            <div className='flex items-center gap-2'>
-                                <img 
-                                    className='w-8 h-8 rounded-full bg-gray-100 object-cover' 
-                                    src={item.userData?.image || '/default-avatar.png'} 
-                                    alt="" 
-                                />
-                                <p className='text-gray-800 font-medium'>
-                                    {item.userData?.name || 'Unknown'}
-                                </p>
-                            </div>
+  useEffect(() => {
+    getAppointments();
+  }, []);
 
-                            {/* Payment */}
-                            <div>
-                                <p className='text-xs inline border border-[#5F6FFF] px-2 py-0.5 rounded-full text-[#5F6FFF]'>
-                                    {item.payment ? 'Online' : 'CASH'}
-                                </p>
-                            </div>
+  return (
+    <div className="m-5 w-full">
+      <p className="mb-3 text-lg font-medium text-gray-700">
+        My Appointments
+      </p>
 
-                            <p className='hidden sm:block'>
-                                {calculateAge(item.userData?.dob)}
-                            </p>
-
-                            <p>{item.slotDate}, {item.slotTime}</p>
-                            <p>${item.amount}</p>
-
-                            {/* Actions */}
-                            <div>
-                                {item.cancelled ? (
-                                    <p className='text-red-400 text-xs font-semibold'>Cancelled</p>
-                                ) : item.isCompleted ? (
-                                    <p className='text-green-500 text-xs font-semibold'>Completed</p>
-                                ) : (
-                                    <div className='flex items-center gap-2'>
-                                        <img 
-                                            onClick={() => cancelAppointment(item._id)} 
-                                            className='w-8 cursor-pointer p-1.5 hover:bg-red-50 rounded-full transition-all' 
-                                            src={assets.cancel_icon} 
-                                            alt="Cancel" 
-                                        />
-                                        <img 
-                                            onClick={() => completeAppointment(item._id)} 
-                                            className='w-8 cursor-pointer p-1.5 hover:bg-green-50 rounded-full transition-all' 
-                                            src={assets.tick_icon} 
-                                            alt="Complete" 
-                                        />
-                                    </div>
-                                )}
-                            </div>
-
-                        </div>
-                    ))
-                )}
-
-            </div>
+      <div className="bg-white border rounded text-sm max-h-[80vh] min-h-[50vh] overflow-y-auto shadow-sm">
+        <div className="hidden sm:grid grid-cols-[0.5fr_2fr_1.5fr_2fr_1fr_1fr_1fr] gap-2 py-3 px-6 border-b bg-gray-50 text-gray-600 font-medium">
+          <p>#</p>
+          <p>Patient</p>
+          <p>Payment</p>
+          <p>Date & Time</p>
+          <p>Fees</p>
+          <p>Status</p>
+          <p>Action</p>
         </div>
-    );
+
+        {loading ? (
+          <p className="text-center py-10 text-gray-400">
+            Loading appointments...
+          </p>
+        ) : appointments.length === 0 ? (
+          <p className="text-center py-10 text-gray-400">
+            No appointments found.
+          </p>
+        ) : (
+          appointments.map((item, index) => (
+            <div
+              key={item.id}
+              className="grid grid-cols-1 gap-3 sm:grid-cols-[0.5fr_2fr_1.5fr_2fr_1fr_1fr_1fr] sm:gap-2 items-center text-gray-500 py-4 px-6 border-b hover:bg-gray-50 transition-all"
+            >
+              <p className="hidden sm:block">{index + 1}</p>
+
+              <div>
+                <p className="text-gray-800 font-medium">
+                  {item.patientName || "Patient"}
+                </p>
+
+                <p className="text-xs text-gray-400 break-all">
+                  {item.patientId || ""}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs inline border border-[#5F6FFF] px-2 py-0.5 rounded-full text-[#5F6FFF]">
+                  {item.paymentStatus === "paid" ? "Online" : "CASH"}
+                </p>
+              </div>
+
+              <div>
+                <p>{item.appointmentDate || "-"}</p>
+                <p className="text-xs text-gray-400">
+                  {item.appointmentTime || ""}
+                </p>
+              </div>
+
+              <p className="font-medium text-gray-700">
+                ${item.fees ?? 0}
+              </p>
+
+              <p
+                className={`capitalize font-medium ${
+                  item.status === "cancelled"
+                    ? "text-red-500"
+                    : item.status === "completed"
+                    ? "text-green-600"
+                    : "text-yellow-600"
+                }`}
+              >
+                {item.status || "pending"}
+              </p>
+
+              <div>
+                {item.status === "cancelled" ? (
+                  <p className="text-red-400 text-xs font-semibold">
+                    Cancelled
+                  </p>
+                ) : item.status === "completed" ? (
+                  <p className="text-green-500 text-xs font-semibold">
+                    Completed
+                  </p>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <img
+                      onClick={() => cancelAppointment(item.id)}
+                      className="w-8 cursor-pointer p-1.5 hover:bg-red-50 rounded-full transition-all"
+                      src={assets.cancel_icon}
+                      alt="Cancel"
+                    />
+
+                    <img
+                      onClick={() => completeAppointment(item.id)}
+                      className="w-8 cursor-pointer p-1.5 hover:bg-green-50 rounded-full transition-all"
+                      src={assets.tick_icon}
+                      alt="Complete"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
 };
 
 export default DoctorAppointments;

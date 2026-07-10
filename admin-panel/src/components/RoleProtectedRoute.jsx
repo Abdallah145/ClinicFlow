@@ -1,26 +1,27 @@
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-const ProtectedRoute = ({ children, allowedRoles }) => {
+const RoleProtectedRoute = ({ children, allowedRoles }) => {
   const { currentUser, userRole, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="min-h-[70vh] flex items-center justify-center text-gray-500">
+      <div className="w-full min-h-screen flex items-center justify-center">
         Loading...
       </div>
     );
   }
 
   if (!currentUser) {
-    return <Navigate to="/login" replace />;
+    window.location.href = "http://localhost:5173/login";
+    return null;
   }
 
-  if (allowedRoles && !allowedRoles.includes(userRole)) {
+  if (!allowedRoles.includes(userRole)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
   return children;
 };
 
-export default ProtectedRoute;
+export default RoleProtectedRoute;

@@ -9,11 +9,13 @@ const Header = () => {
         {/* left side */}
         <div className='md:w-1/2 flex flex-col justify-center items-start gap-4 m-auto py-10 md:py-[10vw] md:mb-[-30px]'>
             <p className='text-3xl md:text-4xl lg:text-5xl font-semibold text-white leading-tight md:leading-tight lg:leading-tight'>
-                Expert Care You Can <br/> Trust, On Your <br/> Schedule.
+                Book Appointment 
+<br/> With Trusted Doctors 
             </p>
             <div className='flex flex-col md:flex-col gap-3 items-center text-white text-sm font-light'>
                 <img className='w-28' src={group_profiles} alt="Group Profiles" />
-                <p>Take control of your health. Browse verified <br className='hidden sm:block' /> specialists, read reviews, and secure your visit <br  /> instantly from one secure platform.</p>
+                <p>Simply browse through our extensive list of trusted doctors, 
+ <br className='hidden sm:block' /> schedule your appointment hassle-free. </p>
             </div>
 
             <a className='flex items-center gap-2 bg-white  py-3 px-8 rounded-full text-gray-600 text-sm m-auto hover:scale-105 transition-all duration-300' href="#speciality">

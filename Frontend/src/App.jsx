@@ -11,11 +11,11 @@ import MyProfile from "./page/MyProfile.jsx";
 import MyAppointments from "./page/MyAppointments.jsx";
 import Appointment from "./page/Appointment.jsx";
 import Footer from "./components/Footer.jsx";
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { AuthProvider, useAuth } from "./context/AuthContext.jsx";
-import DoctorDashboard from "./page/DoctorDashboard.jsx";
 import ProtectedRoute from "./components/ProtectedRoutes.jsx";
+import Unauthorized from "./page/Unauthorized.jsx";
 
 const App = () => {
   return (
@@ -30,19 +30,33 @@ const App = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="/my-profile" element={<MyProfile />} />
-            <Route path="/my-appointment" element={<MyAppointments />} />
-            <Route path="/appointment/:docId" element={<Appointment />} />
-
-            {/* 🛡️ Secure Route Guard Interception Gateway */}
             <Route
-              path="/doctor-dashboard"
+              path="/my-profile"
               element={
-                <ProtectedRoute allowedRoles={["doctor"]}>
-                  <DoctorDashboard />
+                <ProtectedRoute allowedRoles={["patient"]}>
+                  <MyProfile />
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="/my-appointment"
+              element={
+                <ProtectedRoute allowedRoles={["patient"]}>
+                  <MyAppointments />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/appointment/:docId"
+              element={
+                <ProtectedRoute allowedRoles={["patient"]}>
+                  <Appointment />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/unauthorized" element={<Unauthorized />} />
           </Routes>
         </div>
         <div className="bg-gray-100 px-4 sm:py-[0.1%] sm:px-[10%]">

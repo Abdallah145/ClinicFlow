@@ -5,3 +5,8 @@
 ::-webkit-scrollbar {
   @apply hidden
 }
+@theme {
+  --color-primary: #5F6FFF; /* حط اللون بتاعك هنا */
+
+}
+

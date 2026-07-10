@@ -1,39 +1,70 @@
 import React from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../firebaseConfig";
+import { useAuth } from "../context/AuthContext";
+import { assets } from "../assets/assets";
 
-const Navbar = ({ onLogout }) => {
+const Navbar = () => {
+  const { userRole, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const isLoginPage =
+    location.pathname === "/login" ||
+    location.pathname === "/admin-login" ||
+    location.pathname === "/doctor-login";
+
+  if (isLoginPage || loading) {
+    return null;
+  }
+
   const handleLogout = async () => {
     try {
-      // لو بتستخدم Firebase
-      if (onLogout) {
-        await onLogout();
-      }
+      await signOut(auth);
 
-      // تمسح أي token (لو موجود)
-      localStorage.removeItem("token");
-
-      // ممكن تحول لصفحة login
-      window.location.href = "/login";
+      // بعد Logout يرجع لاختيار نوع الحساب
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error("Logout error:", error);
     }
   };
 
+  const roleLabel =
+    userRole === "admin"
+      ? "Admin"
+      : userRole === "doctor"
+      ? "Doctor"
+      : "User";
+
   return (
-    <header className="bg-white border-b flex justify-between items-center px-4 py-3">
+    <div className="flex items-center justify-between px-4 sm:px-10 py-3 border-b bg-white">
       <div className="flex items-center gap-3">
-        <span className="text-blue-600 text-2xl font-bold">Healix</span>
-        <span className="border border-gray-300 rounded-full px-2.5 py-0.5 text-xs text-gray-500">
-          Admin
-        </span>
+        <img
+          className="w-36 sm:w-40 cursor-pointer"
+          src={assets.admin_logo}
+          alt="Healix"
+          onClick={() =>
+            navigate(
+              userRole === "admin"
+                ? "/admin-dashboard"
+                : "/doctor-dashboard"
+            )
+          }
+        />
+
+        <p className="border px-2.5 py-0.5 rounded-full text-xs text-gray-600">
+          {roleLabel}
+        </p>
       </div>
 
       <button
         onClick={handleLogout}
-        className="bg-blue-600 text-white px-5 py-2 rounded-full text-sm hover:opacity-90"
+        className="bg-[#5F6FFF] text-white text-sm px-6 py-2 rounded-full hover:bg-[#4c5ce6] transition-all"
       >
         Logout
       </button>
-    </header>
+    </div>
   );
 };
 

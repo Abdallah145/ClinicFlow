@@ -12,8 +12,6 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setLoading(true);
-
       try {
         if (user) {
           setCurrentUser(user);
@@ -24,21 +22,21 @@ export const AuthProvider = ({ children }) => {
             setUserRole(userDoc.data().role);
           } else {
             setUserRole(null);
+            console.log("User role document was not found");
           }
         } else {
           setCurrentUser(null);
           setUserRole(null);
         }
       } catch (error) {
-        console.error("Could not load user role:", error);
-        setCurrentUser(null);
+        console.error("Error loading user role:", error);
         setUserRole(null);
       } finally {
         setLoading(false);
       }
     });
 
-    return unsubscribe;
+    return () => unsubscribe();
   }, []);
 
   return (
