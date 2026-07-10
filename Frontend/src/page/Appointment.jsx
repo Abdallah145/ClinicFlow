@@ -13,6 +13,10 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 
+// Core Structural Plumbing Imports
+import { useAuth } from '../context/AuthContext';       // Pulls active user login token
+import { bookAppointment } from '../clinicService';     // Pulls your transaction code
+
 const Appointment = () => {
   const { docId } = useParams();
   const navigate = useNavigate();

@@ -160,6 +160,7 @@ const MyAppointments = () => {
                   </div>
                 </div>
 
+                {/* Right Call-To-Action Operations Buttons */}
                 <div className="flex flex-col items-start gap-3 sm:items-end sm:justify-end">
                   <button
                     disabled
