@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { auth, db } from "../firebaseConfig";
 import {
   collection,
@@ -37,10 +37,13 @@ const MyAppointments = () => {
 
       const snapshot = await getDocs(appointmentsQuery);
 
-      const appointmentsData = snapshot.docs.map((appointmentDoc) => ({
-        id: appointmentDoc.id,
-        ...appointmentDoc.data(),
-      }));
+      const appointmentsData = snapshot.docs.map((appointmentDoc) => {
+        const data = appointmentDoc.data();
+        return {
+          id: appointmentDoc.id,
+          ...data,
+        };
+      });
 
       // Sort pending appointments to the top
       const sortedData = appointmentsData.sort((a, b) => {
@@ -61,7 +64,9 @@ const MyAppointments = () => {
   };
 
   useEffect(() => {
-    getMyAppointments();
+    Promise.resolve().then(() => {
+      getMyAppointments();
+    });
   }, []);
 
   const cancelAppointment = async (appointmentId) => {
