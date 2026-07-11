@@ -38,7 +38,16 @@ const DoctorAppointments = () => {
         ...appointmentDoc.data(),
       }));
 
-      setAppointments(appointmentsData);
+      // Sort pending appointments to the top
+      const sortedAppointments = appointmentsData.sort((a, b) => {
+        const isAPending = a.status !== "completed" && a.status !== "cancelled";
+        const isBPending = b.status !== "completed" && b.status !== "cancelled";
+        if (isAPending && !isBPending) return -1;
+        if (!isAPending && isBPending) return 1;
+        return 0;
+      });
+
+      setAppointments(sortedAppointments);
     } catch (error) {
       console.error("Error getting doctor appointments:", error);
     } finally {
@@ -83,13 +92,12 @@ const DoctorAppointments = () => {
       </p>
 
       <div className="bg-white border rounded text-sm max-h-[80vh] min-h-[50vh] overflow-y-auto shadow-sm">
-        <div className="hidden sm:grid grid-cols-[0.5fr_2fr_1.5fr_2fr_1fr_1fr_1fr] gap-2 py-3 px-6 border-b bg-gray-50 text-gray-600 font-medium">
+        <div className="hidden sm:grid grid-cols-[0.5fr_2fr_1.5fr_2fr_1fr_1fr] gap-2 py-3 px-6 border-b bg-gray-50 text-gray-600 font-medium items-center">
           <p>#</p>
           <p>Patient</p>
           <p>Payment</p>
           <p>Date & Time</p>
           <p>Fees</p>
-          <p>Status</p>
           <p>Action</p>
         </div>
 
@@ -105,18 +113,26 @@ const DoctorAppointments = () => {
           appointments.map((item, index) => (
             <div
               key={item.id}
-              className="grid grid-cols-1 gap-3 sm:grid-cols-[0.5fr_2fr_1.5fr_2fr_1fr_1fr_1fr] sm:gap-2 items-center text-gray-500 py-4 px-6 border-b hover:bg-gray-50 transition-all"
+              className="grid grid-cols-1 gap-3 sm:grid-cols-[0.5fr_2fr_1.5fr_2fr_1fr_1fr] sm:gap-2 items-center text-gray-500 py-4 px-6 border-b hover:bg-gray-50 transition-all"
             >
               <p className="hidden sm:block">{index + 1}</p>
 
-              <div>
-                <p className="text-gray-800 font-medium">
-                  {item.patientName || "Patient"}
-                </p>
-
-                <p className="text-xs text-gray-400 break-all">
-                  {item.patientId || ""}
-                </p>
+              <div className="flex items-center gap-3">
+                {item.patientImage ? (
+                  <img className="w-10 h-10 rounded-full object-cover shrink-0" src={item.patientImage} alt={item.patientName} />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold shrink-0">
+                    {item.patientName?.charAt(0)?.toUpperCase() || "P"}
+                  </div>
+                )}
+                <div>
+                  <p className="text-gray-800 font-medium">
+                    {item.patientName || "Patient"}
+                  </p>
+                  <p className="text-xs text-gray-400 break-all">
+                    {item.patientId || ""}
+                  </p>
+                </div>
               </div>
 
               <div>
@@ -136,18 +152,6 @@ const DoctorAppointments = () => {
                 ${item.fees ?? 0}
               </p>
 
-              <p
-                className={`capitalize font-medium ${
-                  item.status === "cancelled"
-                    ? "text-red-500"
-                    : item.status === "completed"
-                    ? "text-green-600"
-                    : "text-yellow-600"
-                }`}
-              >
-                {item.status || "pending"}
-              </p>
-
               <div>
                 {item.status === "cancelled" ? (
                   <p className="text-red-400 text-xs font-semibold">
@@ -158,20 +162,22 @@ const DoctorAppointments = () => {
                     Completed
                   </p>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <img
+                  <div className="flex items-center gap-3">
+                    <button
                       onClick={() => cancelAppointment(item.id)}
-                      className="w-8 cursor-pointer p-1.5 hover:bg-red-50 rounded-full transition-all"
-                      src={assets.cancel_icon}
-                      alt="Cancel"
-                    />
+                      className="bg-red-100 hover:bg-red-600 hover:text-white text-red-700 px-4 py-2.5 rounded-lg font-bold text-xs transition-all shadow-sm cursor-pointer"
+                      title="Cancel Appointment"
+                    >
+                      Cancel
+                    </button>
 
-                    <img
+                    <button
                       onClick={() => completeAppointment(item.id)}
-                      className="w-8 cursor-pointer p-1.5 hover:bg-green-50 rounded-full transition-all"
-                      src={assets.tick_icon}
-                      alt="Complete"
-                    />
+                      className="bg-green-100 hover:bg-green-600 hover:text-white text-green-700 px-4 py-2.5 rounded-lg font-bold text-xs transition-all shadow-sm cursor-pointer"
+                      title="Complete Appointment"
+                    >
+                      Complete
+                    </button>
                   </div>
                 )}
               </div>

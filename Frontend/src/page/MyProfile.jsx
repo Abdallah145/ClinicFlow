@@ -1,34 +1,124 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { assets } from "../assets/assets_frontend/assets";
+import { db } from "../firebaseConfig";
+import { useAuth } from "../context/AuthContext";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { uploadProfileImage } from "../cloudinary";
+import { toast } from "react-toastify";
 
 const MyProfile = () => {
+  const { currentUser, loading: authLoading, setUserData: setAuthUserData } = useAuth()
   const [isEdit, setIsEdit] = useState(false)
+  const [profileLoading, setProfileLoading] = useState(true)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  
   const fileInputRef = useRef(null)
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState("")
 
   const [userData, setUserData] = useState({
-    name: "Edward Vincent",
-    image: assets.profile_pic,
-    email: 'richardjameswap@gmail.com',
-    phone: '+1 123 456 7890',
+    name: "",
+    image: "",
+    email: "",
+    phone: "",
     address: {
-      line1: "57th Cross, Richmond",
-      line2: "Circle, Church Road, London"
+      line1: "",
+      line2: ""
     },
-    gender: 'Male',
-    dob: '2000-01-20'
+    gender: "Male",
+    dob: ""
   })
 
   // Keep a backup of userData to rollback if they cancel editing
   const [tempUserData, setTempUserData] = useState(null)
 
-  const handleEditToggle = () => {
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!currentUser) return;
+      try {
+        setProfileLoading(true)
+        const userDoc = await getDoc(doc(db, "users", currentUser.uid))
+        if (userDoc.exists()) {
+          const data = userDoc.data()
+          setUserData({
+            name: data.name || "",
+            image: data.image || "",
+            email: data.email || currentUser.email || "",
+            phone: data.phone || "",
+            address: data.address || { line1: "", line2: "" },
+            gender: data.gender || "Male",
+            dob: data.dob || ""
+          })
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error)
+        toast.error("Failed to load profile data.")
+      } finally {
+        setProfileLoading(false)
+      }
+    }
+
+    if (!authLoading) {
+      fetchUserData()
+    }
+  }, [currentUser, authLoading])
+
+  const handleEditToggle = async () => {
     if (!isEdit) {
       // Entering edit mode: store backup
       setTempUserData({ ...userData, address: { ...userData.address } })
       setIsEdit(true)
     } else {
       // Saving changes
+      await handleSave()
+    }
+  }
+
+  const handleSave = async () => {
+    setIsSubmitting(true)
+    try {
+      let finalImageUrl = userData.image
+
+      if (imageFile) {
+        // Upload to Cloudinary
+        const uploadToastId = toast.loading("Uploading profile image...")
+        try {
+          finalImageUrl = await uploadProfileImage(imageFile)
+          toast.dismiss(uploadToastId)
+        } catch (uploadError) {
+          toast.dismiss(uploadToastId)
+          throw new Error("Failed to upload image to Cloudinary: " + uploadError.message)
+        }
+      }
+
+      const userRef = doc(db, "users", currentUser.uid)
+      const updatedFields = {
+        name: userData.name,
+        phone: userData.phone,
+        address: userData.address,
+        gender: userData.gender,
+        dob: userData.dob,
+        image: finalImageUrl
+      }
+
+      await updateDoc(userRef, updatedFields)
+
+      const updatedProfile = {
+        ...userData,
+        ...updatedFields
+      }
+
+      setUserData(updatedProfile)
+      setAuthUserData(updatedProfile)
+      setImageFile(null)
+      setImagePreview("")
       setIsEdit(false)
+      toast.success("Profile saved successfully!")
+    } catch (error) {
+      console.error("Error saving profile details:", error)
+      toast.error(error.message || "Failed to save profile.")
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -36,21 +126,33 @@ const MyProfile = () => {
     if (tempUserData) {
       setUserData(tempUserData)
     }
+    setImageFile(null)
+    setImagePreview("")
     setIsEdit(false)
   }
 
   const handleImageChange = (e) => {
     const file = e.target.files[0]
     if (file) {
-      const reader = new FileReader()
-      reader.onload = (uploadEvent) => {
-        setUserData(prev => ({
-          ...prev,
-          image: uploadEvent.target.result
-        }))
-      }
-      reader.readAsDataURL(file)
+      setImageFile(file)
+      setImagePreview(URL.createObjectURL(file))
     }
+  }
+
+  if (authLoading || profileLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    )
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="text-center my-20 text-gray-500">
+        Please sign in to view your profile.
+      </div>
+    )
   }
 
   return (
@@ -71,12 +173,20 @@ const MyProfile = () => {
           {/* Avatar wrapper scales cleanly on mobile viewports */}
           <div className='absolute -top-16 left-1/2 -translate-x-1/2 sm:left-8 sm:translate-x-0 group z-10'>
             <div 
-              onClick={() => isEdit && fileInputRef.current?.click()}
-              className={`w-28 h-28 md:w-36 md:h-36 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-zinc-50 relative ${isEdit ? 'cursor-pointer group-hover:brightness-90 transition-all duration-300' : ''}`}
+              onClick={() => isEdit && !isSubmitting && fileInputRef.current?.click()}
+              className={`w-28 h-28 md:w-36 md:h-36 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-zinc-50 relative ${isEdit && !isSubmitting ? 'cursor-pointer group-hover:brightness-90 transition-all duration-300' : ''}`}
             >
-              <img className='w-full h-full object-cover' src={userData.image} alt="Profile avatar" />
-              
-              {isEdit && (
+              {imagePreview || userData.image ? (
+                <img className='w-full h-full object-cover' src={imagePreview || userData.image} alt="Profile avatar" />
+              ) : (
+                <div className="w-full h-full bg-indigo-50 flex items-center justify-center text-indigo-400">
+                  <svg className="w-12 h-12 md:w-16 md:h-16" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M24 20.993V24H0v-2.996A14.977 14.977 0 0112.004 15c4.904 0 9.26 2.354 11.996 5.993zM16.002 8.999a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+              )}
+
+              {isEdit && !isSubmitting && (
                 <div className='absolute inset-0 bg-black/40 flex flex-col items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
                   <svg className="w-6 h-6 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -93,6 +203,7 @@ const MyProfile = () => {
               className='hidden' 
               accept="image/*" 
               onChange={handleImageChange}
+              disabled={isSubmitting}
             />
           </div>
 
@@ -107,6 +218,7 @@ const MyProfile = () => {
                     value={userData.name}
                     onChange={e => setUserData(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="Enter full name"
+                    disabled={isSubmitting}
                   />
                   <div className='absolute right-3 top-1/2 -translate-y-1/2 text-indigo-400'>
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -136,17 +248,23 @@ const MyProfile = () => {
                   <button 
                     className='border border-zinc-200 bg-white text-neutral-600 hover:bg-zinc-50 px-5 py-2.5 rounded-xl font-medium shadow-sm transition-all text-sm flex items-center gap-1.5'
                     onClick={handleCancel}
+                    disabled={isSubmitting}
                   >
                     Cancel
                   </button>
                   <button 
                     className='bg-gradient-to-r from-indigo-600 to-blue-600 text-white hover:opacity-95 hover:shadow-indigo-100 hover:shadow-lg px-6 py-2.5 rounded-xl font-semibold shadow-sm transition-all text-sm flex items-center gap-1.5' 
                     onClick={handleEditToggle}
+                    disabled={isSubmitting}
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                    </svg>
-                    Save Changes
+                    {isSubmitting ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                    {isSubmitting ? "Saving..." : "Save Changes"}
                   </button>
                 </>
               ) : (
@@ -199,6 +317,7 @@ const MyProfile = () => {
                         type="text"
                         value={userData.phone}
                         onChange={e => setUserData(prev => ({ ...prev, phone: e.target.value }))}
+                        disabled={isSubmitting}
                       />
                       <div className='absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400'>
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -213,7 +332,7 @@ const MyProfile = () => {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.94.725l.548 2.2a1 1 0 01-.321.988l-1.305.98a10.582 10.582 0 004.872 4.872l.98-1.305a1 1 0 01.988-.321l2.2.548a1 1 0 01.725.94V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                         </svg>
                       </div>
-                      <p className='text-sm font-medium text-neutral-800'>{userData.phone}</p>
+                      <p className='text-sm font-medium text-neutral-800'>{userData.phone || "No phone added"}</p>
                     </div>
                   )}
                 </div>
@@ -229,6 +348,7 @@ const MyProfile = () => {
                           value={userData.address.line1}
                           type="text"
                           placeholder="Street line 1"
+                          disabled={isSubmitting}
                         />
                         <div className='absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400'>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -244,6 +364,7 @@ const MyProfile = () => {
                           value={userData.address.line2}
                           type="text"
                           placeholder="City, Country"
+                          disabled={isSubmitting}
                         />
                         <div className='absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400'>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -260,8 +381,14 @@ const MyProfile = () => {
                         </svg>
                       </div>
                       <p className='text-sm font-medium text-neutral-700 leading-relaxed'>
-                        {userData.address.line1}<br />
-                        <span className='text-zinc-400 font-normal'>{userData.address.line2}</span>
+                        {userData.address.line1 || userData.address.line2 ? (
+                          <>
+                            {userData.address.line1 && <>{userData.address.line1}<br /></>}
+                            {userData.address.line2 && <span className='text-zinc-400 font-normal'>{userData.address.line2}</span>}
+                          </>
+                        ) : (
+                          <span className="text-zinc-400 font-normal">No address added</span>
+                        )}
                       </p>
                     </div>
                   )}
@@ -288,6 +415,7 @@ const MyProfile = () => {
                           className='w-full bg-white border border-zinc-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 rounded-xl p-3 pl-10 text-sm font-medium text-neutral-800 focus:outline-none transition-all appearance-none'
                           onChange={(e) => setUserData(prev => ({ ...prev, gender: e.target.value }))}
                           value={userData.gender}
+                          disabled={isSubmitting}
                         >
                           <option value="Male">Male</option>
                           <option value="Female">Female</option>
@@ -322,6 +450,7 @@ const MyProfile = () => {
                           type="date"
                           onChange={(e) => setUserData(prev => ({ ...prev, dob: e.target.value }))}
                           value={userData.dob}
+                          disabled={isSubmitting}
                         />
                         <div className='absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400'>
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -337,7 +466,11 @@ const MyProfile = () => {
                           </svg>
                         </div>
                         <p className='text-sm font-medium text-neutral-800'>
-                          {new Date(userData.dob).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                          {userData.dob ? (
+                            new Date(userData.dob).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+                          ) : (
+                            <span className="text-zinc-400 font-normal">No date of birth added</span>
+                          )}
                         </p>
                       </div>
                     )}
@@ -355,15 +488,21 @@ const MyProfile = () => {
                 <button 
                   className='w-full bg-gradient-to-r from-indigo-600 to-blue-600 text-white py-3.5 rounded-xl font-semibold shadow-md flex items-center justify-center gap-2'
                   onClick={handleEditToggle}
+                  disabled={isSubmitting}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                  </svg>
-                  Save Changes
+                  {isSubmitting ? (
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                  {isSubmitting ? "Saving..." : "Save Changes"}
                 </button>
                 <button 
                   className='w-full border border-zinc-200 bg-white text-neutral-600 py-3.5 rounded-xl font-medium shadow-sm flex items-center justify-center gap-2'
                   onClick={handleCancel}
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </button>

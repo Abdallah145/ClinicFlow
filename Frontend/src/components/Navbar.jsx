@@ -17,7 +17,7 @@ const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false); // NEW: State for mobile click toggle
 
   // Connect to your live authentication data state matrix
-  const { currentUser } = useAuth();
+  const { currentUser, userData } = useAuth();
 
   const handleLogoutClick = async () => {
     const result = await logoutUser();
@@ -78,8 +78,8 @@ const Navbar = () => {
             className="flex items-center gap-2 group relative cursor-pointer"
           >
             <img
-              className="w-8 rounded-full"
-              src={proile_pic}
+              className="w-8 h-8 rounded-full object-cover"
+              src={userData?.image || proile_pic}
               alt="Profile Picture"
             />
             <img className="w-2.5 " src={dropdown_icon} alt="Dropdown Icon" />

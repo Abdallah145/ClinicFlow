@@ -42,7 +42,16 @@ const MyAppointments = () => {
         ...appointmentDoc.data(),
       }));
 
-      setAppointments(appointmentsData);
+      // Sort pending appointments to the top
+      const sortedData = appointmentsData.sort((a, b) => {
+        const isAPending = a.status !== "completed" && a.status !== "cancelled";
+        const isBPending = b.status !== "completed" && b.status !== "cancelled";
+        if (isAPending && !isBPending) return -1;
+        if (!isAPending && isBPending) return 1;
+        return 0;
+      });
+
+      setAppointments(sortedData);
     } catch (error) {
       console.error(error);
       toast.error("Could not load appointments: " + error.message);
@@ -148,7 +157,7 @@ const MyAppointments = () => {
                       <p
                         className={`font-medium ${appointment.status === "cancelled"
                             ? "text-red-500"
-                            : appointment.status === "confirmed"
+                            : appointment.status === "completed"
                               ? "text-green-600"
                               : "text-yellow-600"
                           }`}
@@ -168,7 +177,7 @@ const MyAppointments = () => {
                     Payment: {appointment.paymentStatus || "unpaid"}
                   </button>
 
-                  {appointment.status !== "cancelled" && (
+                  {appointment.status !== "cancelled" && appointment.status !== "completed" && (
                     <button
                       onClick={() => cancelAppointment(appointment.id)}
                       disabled={cancellingId === appointment.id}

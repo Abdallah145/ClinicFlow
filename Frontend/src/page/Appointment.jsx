@@ -135,6 +135,7 @@ const Appointment = () => {
         patientName: patientData.name || user.displayName || "Patient",
         patientEmail: patientData.email || user.email || "",
         patientPhone: patientData.phone || "",
+        patientImage: patientData.image || "",
 
         doctorId: doctorId,
         doctorName: docInfo.name || "",

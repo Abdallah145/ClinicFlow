@@ -29,6 +29,14 @@ const AllAppointments = () => {
     getAllAppointments();
   }, []);
 
+  const sortedAppointments = [...appointments].sort((a, b) => {
+    const isAPending = a.status !== "completed" && a.status !== "confirmed" && a.status !== "cancelled";
+    const isBPending = b.status !== "completed" && b.status !== "confirmed" && b.status !== "cancelled";
+    if (isAPending && !isBPending) return -1;
+    if (!isAPending && isBPending) return 1;
+    return 0;
+  });
+
   return (
     <div className="m-5 w-full">
       <p className="mb-3 text-lg font-medium text-gray-700">
@@ -36,25 +44,24 @@ const AllAppointments = () => {
       </p>
 
       <div className="bg-white border rounded text-sm max-h-[80vh] min-h-[60vh] overflow-y-scroll shadow-sm">
-        <div className="hidden sm:grid grid-cols-[0.5fr_2fr_2fr_2fr_1fr_1fr_1fr] py-3 px-6 border-b bg-gray-50 text-gray-600 font-medium">
+        <div className="hidden sm:grid grid-cols-[0.5fr_2fr_2fr_2fr_1fr_1fr] py-3 px-6 border-b bg-gray-50 text-gray-600 font-medium">
           <p>#</p>
           <p>Patient</p>
           <p>Doctor</p>
           <p>Date & Time</p>
           <p>Fees</p>
-          <p>Status</p>
           <p>Action</p>
         </div>
 
-        {appointments.length === 0 ? (
+        {sortedAppointments.length === 0 ? (
           <div className="py-10 text-center text-gray-500">
             No appointments found.
           </div>
         ) : (
-          appointments.map((item, index) => (
+          sortedAppointments.map((item, index) => (
             <div
               key={item.id}
-              className="grid grid-cols-1 gap-3 sm:grid-cols-[0.5fr_2fr_2fr_2fr_1fr_1fr_1fr] sm:gap-0 items-center text-gray-500 py-4 px-6 border-b hover:bg-gray-50 transition-all"
+              className="grid grid-cols-1 gap-3 sm:grid-cols-[0.5fr_2fr_2fr_2fr_1fr_1fr] sm:gap-0 items-center text-gray-500 py-4 px-6 border-b hover:bg-gray-50 transition-all"
             >
               <p className="hidden sm:block">{index + 1}</p>
 
@@ -84,10 +91,10 @@ const AllAppointments = () => {
               </div>
 
               <div>
-                {/* ALIGNED KEYS: date & timeSlot */}
-                <p className="text-gray-800 font-medium">{item.date || "-"}</p>
+                {/* ALIGNED KEYS: date & timeSlot or appointmentDate & appointmentTime */}
+                <p className="text-gray-800 font-medium">{item.appointmentDate || item.date || "-"}</p>
                 <p className="text-xs text-gray-400">
-                  {item.timeSlot || ""}
+                  {item.appointmentTime || item.timeSlot || ""}
                 </p>
               </div>
 
@@ -95,21 +102,14 @@ const AllAppointments = () => {
                 ${item.fees ?? 60} {/* Fallback fee matching doctor templates */}
               </p>
 
-              <p
-                className={`capitalize font-medium ${item.status === "cancelled"
-                    ? "text-red-500"
-                    : item.status === "confirmed"
-                      ? "text-green-600"
-                      : "text-yellow-600"
-                  }`}
-              >
-                {item.status || "pending"}
-              </p>
-
               <div>
                 {item.status === "cancelled" ? (
                   <p className="text-red-400 text-xs font-medium">
                     Cancelled
+                  </p>
+                ) : item.status === "completed" || item.status === "confirmed" ? (
+                  <p className="text-green-600 text-xs font-medium">
+                    Completed
                   </p>
                 ) : (
                   <button
