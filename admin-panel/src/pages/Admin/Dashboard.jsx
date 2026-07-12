@@ -49,8 +49,12 @@ const Dashboard = () => {
         (user) => user.role === "patient"
       ).length;
 
+      const pendingAppointments = appointments.filter(
+        (appointment) => appointment.status !== "completed" && appointment.status !== "cancelled"
+      );
+
       // ترتيب آخر الحجوزات حسب createdAt
-      const latestAppointments = [...appointments]
+      const latestAppointments = [...pendingAppointments]
         .sort((a, b) => {
           const dateA = a.createdAt?.toDate
             ? a.createdAt.toDate()
@@ -142,13 +146,13 @@ const Dashboard = () => {
       <div className="bg-white rounded-lg border mt-10 shadow-sm">
         <div className="flex items-center gap-2.5 px-6 py-4 border-b bg-gray-50 rounded-t-lg">
           <img className="w-5" src={assets.list_icon} alt="Latest bookings" />
-          <p className="font-semibold text-gray-700">Latest Bookings</p>
+          <p className="font-semibold text-gray-700">Latest Bookings (Pending Only)</p>
         </div>
 
         <div className="pt-2">
           {dashData?.latestAppointments?.length === 0 ? (
             <p className="px-6 py-4 text-sm text-gray-500">
-              No appointments yet.
+              No pending bookings available.
             </p>
           ) : (
             dashData?.latestAppointments?.map((item) => (
@@ -189,12 +193,12 @@ const Dashboard = () => {
                     Completed
                   </p>
                 ) : (
-                  <img
+                  <button
                     onClick={() => cancelAppointment(item.id)}
-                    className="w-8 cursor-pointer p-1.5 hover:bg-red-50 rounded-full transition-all"
-                    src={assets.cancel_icon}
-                    alt="Cancel"
-                  />
+                    className="text-red-500 border border-red-200 px-3 py-1.5 rounded-full text-xs hover:bg-red-50 transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
                 )}
               </div>
             ))

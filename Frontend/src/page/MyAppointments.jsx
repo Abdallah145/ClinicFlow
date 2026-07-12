@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { auth, db } from "../firebaseConfig";
 import {
   collection,
@@ -37,12 +37,24 @@ const MyAppointments = () => {
 
       const snapshot = await getDocs(appointmentsQuery);
 
-      const appointmentsData = snapshot.docs.map((appointmentDoc) => ({
-        id: appointmentDoc.id,
-        ...appointmentDoc.data(),
-      }));
+      const appointmentsData = snapshot.docs.map((appointmentDoc) => {
+        const data = appointmentDoc.data();
+        return {
+          id: appointmentDoc.id,
+          ...data,
+        };
+      });
 
-      setAppointments(appointmentsData);
+      // Sort pending appointments to the top
+      const sortedData = appointmentsData.sort((a, b) => {
+        const isAPending = a.status !== "completed" && a.status !== "cancelled";
+        const isBPending = b.status !== "completed" && b.status !== "cancelled";
+        if (isAPending && !isBPending) return -1;
+        if (!isAPending && isBPending) return 1;
+        return 0;
+      });
+
+      setAppointments(sortedData);
     } catch (error) {
       console.error(error);
       toast.error("Could not load appointments: " + error.message);
@@ -52,7 +64,9 @@ const MyAppointments = () => {
   };
 
   useEffect(() => {
-    getMyAppointments();
+    Promise.resolve().then(() => {
+      getMyAppointments();
+    });
   }, []);
 
   const cancelAppointment = async (appointmentId) => {
@@ -146,13 +160,12 @@ const MyAppointments = () => {
                       </p>
 
                       <p
-                        className={`font-medium ${
-                          appointment.status === "cancelled"
+                        className={`font-medium ${appointment.status === "cancelled"
                             ? "text-red-500"
-                            : appointment.status === "confirmed"
-                            ? "text-green-600"
-                            : "text-yellow-600"
-                        }`}
+                            : appointment.status === "completed"
+                              ? "text-green-600"
+                              : "text-yellow-600"
+                          }`}
                       >
                         Status: {appointment.status || "pending"}
                       </p>
@@ -160,7 +173,7 @@ const MyAppointments = () => {
                   </div>
                 </div>
 
-                {/* Right Call-To-Action Operations Buttons */}
+                {/* Right Call-To-Action Layout Container */}
                 <div className="flex flex-col items-start gap-3 sm:items-end sm:justify-end">
                   <button
                     disabled
@@ -169,7 +182,7 @@ const MyAppointments = () => {
                     Payment: {appointment.paymentStatus || "unpaid"}
                   </button>
 
-                  {appointment.status !== "cancelled" && (
+                  {appointment.status !== "cancelled" && appointment.status !== "completed" && (
                     <button
                       onClick={() => cancelAppointment(appointment.id)}
                       disabled={cancellingId === appointment.id}

@@ -8,6 +8,7 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,18 +22,23 @@ export const AuthProvider = ({ children }) => {
           const userDoc = await getDoc(doc(db, "users", user.uid));
 
           if (userDoc.exists()) {
-            setUserRole(userDoc.data().role);
+            const data = userDoc.data();
+            setUserRole(data.role);
+            setUserData(data);
           } else {
             setUserRole(null);
+            setUserData(null);
           }
         } else {
           setCurrentUser(null);
           setUserRole(null);
+          setUserData(null);
         }
       } catch (error) {
         console.error("Could not load user role:", error);
         setCurrentUser(null);
         setUserRole(null);
+        setUserData(null);
       } finally {
         setLoading(false);
       }
@@ -42,7 +48,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ currentUser, userRole, loading }}>
+    <AuthContext.Provider value={{ currentUser, userRole, userData, loading, setUserData }}>
       {children}
     </AuthContext.Provider>
   );

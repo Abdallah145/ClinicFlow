@@ -57,8 +57,13 @@ const DoctorDashboard = () => {
         doctorAppointments.map((appointment) => appointment.patientId)
       ).size;
 
+      // Filter only pending appointments for the dashboard list
+      const pendingAppointments = doctorAppointments.filter(
+        (appointment) => appointment.status !== "completed" && appointment.status !== "cancelled"
+      );
+
       // ترتيب الحجوزات الأحدث أولًا
-      const latestAppointments = [...doctorAppointments]
+      const latestAppointments = [...pendingAppointments]
         .sort((a, b) => {
           const dateA = a.createdAt?.toDate
             ? a.createdAt.toDate()
@@ -163,13 +168,13 @@ const DoctorDashboard = () => {
       <div className="bg-white rounded-lg border mt-10 shadow-sm">
         <div className="flex items-center gap-2.5 px-6 py-4 border-b bg-gray-50">
           <img className="w-5" src={assets.list_icon} alt="Latest bookings" />
-          <p className="font-semibold text-gray-700">Latest Bookings</p>
+          <p className="font-semibold text-gray-700">Latest Bookings (Pending Only)</p>
         </div>
 
         <div className="pt-2">
           {dashData?.latestAppointments?.length === 0 ? (
             <p className="text-center py-5 text-gray-400">
-              No appointments yet.
+              No pending appointments.
             </p>
           ) : (
             dashData?.latestAppointments?.map((item) => (
@@ -177,9 +182,13 @@ const DoctorDashboard = () => {
                 key={item.id}
                 className="flex items-center px-6 py-4 gap-4 hover:bg-gray-50 border-b last:border-b-0"
               >
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
-                  {item.patientName?.charAt(0)?.toUpperCase() || "P"}
-                </div>
+                {item.patientImage ? (
+                  <img className="w-10 h-10 rounded-full object-cover shrink-0" src={item.patientImage} alt={item.patientName} />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold shrink-0">
+                    {item.patientName?.charAt(0)?.toUpperCase() || "P"}
+                  </div>
+                )}
 
                 <div className="flex-1 text-sm">
                   <p className="text-gray-800 font-medium">
@@ -201,20 +210,22 @@ const DoctorDashboard = () => {
                     Completed
                   </p>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <img
+                  <div className="flex items-center gap-3">
+                    <button
                       onClick={() => cancelAppointment(item.id)}
-                      className="w-8 cursor-pointer p-1.5 hover:bg-red-50 rounded-full"
-                      src={assets.cancel_icon}
-                      alt="Cancel"
-                    />
+                      className="bg-red-100 hover:bg-red-600 hover:text-white text-red-700 px-4 py-2.5 rounded-lg font-bold text-xs transition-all shadow-sm cursor-pointer"
+                      title="Cancel Appointment"
+                    >
+                      Cancel
+                    </button>
 
-                    <img
+                    <button
                       onClick={() => completeAppointment(item.id)}
-                      className="w-8 cursor-pointer p-1.5 hover:bg-green-50 rounded-full"
-                      src={assets.tick_icon}
-                      alt="Complete"
-                    />
+                      className="bg-green-100 hover:bg-green-600 hover:text-white text-green-700 px-4 py-2.5 rounded-lg font-bold text-xs transition-all shadow-sm cursor-pointer"
+                      title="Complete Appointment"
+                    >
+                      Complete
+                    </button>
                   </div>
                 )}
               </div>

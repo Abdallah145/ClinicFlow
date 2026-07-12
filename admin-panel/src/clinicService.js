@@ -11,8 +11,7 @@ import {
   orderBy,
   updateDoc,
   onSnapshot,
-  runTransaction,
-  deleteDoc
+  runTransaction
 } from "firebase/firestore";
 
 /**
@@ -245,16 +244,6 @@ export const getAllAppointmentsAdmin = async () => {
     });
 
     return { success: true, appointments };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-};
-
-export const cancelAppointment = async (appointmentId) => {
-  try {
-    const appointmentRef = doc(db, "appointments", appointmentId);
-    await deleteDoc(appointmentRef);
-    return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
   }

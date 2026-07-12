@@ -135,6 +135,7 @@ const Appointment = () => {
         patientName: patientData.name || user.displayName || "Patient",
         patientEmail: patientData.email || user.email || "",
         patientPhone: patientData.phone || "",
+        patientImage: patientData.image || "",
 
         doctorId: doctorId,
         doctorName: docInfo.name || "",
@@ -236,11 +237,10 @@ const Appointment = () => {
                 setSlotIndex(index);
                 setSlotTime("");
               }}
-              className={`text-center py-6 min-w-16 rounded-full cursor-pointer transition-all ${
-                slotIndex === index
+              className={`text-center py-6 min-w-16 rounded-full cursor-pointer transition-all ${slotIndex === index
                   ? "bg-primary text-white"
                   : "border border-gray-200"
-              }`}
+                }`}
             >
               <p>{item.day}</p>
               <p>{item.date}</p>
@@ -253,11 +253,10 @@ const Appointment = () => {
             <p
               key={item.time}
               onClick={() => setSlotTime(item.time)}
-              className={`text-sm font-light flex-shrink-0 px-5 py-2 rounded-full cursor-pointer transition-all ${
-                item.time === slotTime
+              className={`text-sm font-light flex-shrink-0 px-5 py-2 rounded-full cursor-pointer transition-all ${item.time === slotTime
                   ? "bg-primary text-white"
                   : "text-gray-400 border border-gray-300"
-              }`}
+                }`}
             >
               {item.time.toLowerCase()}
             </p>

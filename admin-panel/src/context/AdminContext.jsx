@@ -17,30 +17,9 @@ const AdminContextProvider = ({ children }) => {
   const [dashData, setDashData] = useState(null);
   const [appointments, setAppointments] = useState([]);
   const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const getAllAppointments = async () => {
-    try {
-      const appointmentsQuery = query(
-        collection(db, "appointments"),
-        orderBy("createdAt", "desc")
-      );
-
-      const snapshot = await getDocs(appointmentsQuery);
-
-      const allAppointments = snapshot.docs.map((appointmentDoc) => ({
-        id: appointmentDoc.id,
-        ...appointmentDoc.data(),
-      }));
-
-      setAppointments(allAppointments);
-      return allAppointments;
-    } catch (error) {
-      console.error(error);
-      toast.error("Could not load appointments: " + error.message);
-      return [];
-    }
-  };
-
+  // 1. FETCH ALL REGISTERED DOCTORS
   const getAllDoctors = async () => {
     try {
       const doctorsQuery = query(
@@ -49,7 +28,6 @@ const AdminContextProvider = ({ children }) => {
       );
 
       const snapshot = await getDocs(doctorsQuery);
-
       const doctorsList = snapshot.docs.map((doctorDoc) => ({
         id: doctorDoc.id,
         ...doctorDoc.data(),
@@ -64,6 +42,30 @@ const AdminContextProvider = ({ children }) => {
     }
   };
 
+  // 2. FETCH MASTER CLINIC APPOINTMENTS LIST
+  const getAllAppointments = async () => {
+    try {
+      const appointmentsQuery = query(
+        collection(db, "appointments"),
+        orderBy("createdAt", "desc")
+      );
+
+      const snapshot = await getDocs(appointmentsQuery);
+      const allAppointments = snapshot.docs.map((appointmentDoc) => ({
+        id: appointmentDoc.id,
+        ...appointmentDoc.data(),
+      }));
+
+      setAppointments(allAppointments);
+      return allAppointments;
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not load appointments: " + error.message);
+      return [];
+    }
+  };
+
+  // 3. GENERATE DASHBOARD ANALYTICS COUNTERS SUMMARY
   const getDashData = async () => {
     try {
       const [usersSnapshot, appointmentsSnapshot] = await Promise.all([
@@ -72,17 +74,15 @@ const AdminContextProvider = ({ children }) => {
       ]);
 
       const users = usersSnapshot.docs.map((userDoc) => userDoc.data());
+      const allAppointments = appointmentsSnapshot.docs.map((appointmentDoc) => ({
+        id: appointmentDoc.id,
+        ...appointmentDoc.data(),
+      }));
 
-      const allAppointments = appointmentsSnapshot.docs.map(
-        (appointmentDoc) => ({
-          id: appointmentDoc.id,
-          ...appointmentDoc.data(),
-        })
-      );
+      const doctorCount = users.filter((user) => user.role === "doctor").length;
+      const patientCount = users.filter((user) => user.role === "patient").length;
 
-      const doctors = users.filter((user) => user.role === "doctor").length;
-      const patients = users.filter((user) => user.role === "patient").length;
-
+      // Safe chronological sort with conditional toDate checking guards
       const latestAppointments = [...allAppointments]
         .sort((a, b) => {
           const firstDate = a.createdAt?.toDate?.() || new Date(0);
@@ -92,8 +92,8 @@ const AdminContextProvider = ({ children }) => {
         .slice(0, 5);
 
       setDashData({
-        doctors,
-        patients,
+        doctors: doctorCount,
+        patients: patientCount,
         appointments: allAppointments.length,
         latestAppointments,
       });
@@ -103,6 +103,7 @@ const AdminContextProvider = ({ children }) => {
     }
   };
 
+  // 4. ADMIN DIRECT CANCELLATION OVERRIDE
   const cancelAppointment = async (appointmentId) => {
     try {
       await updateDoc(doc(db, "appointments", appointmentId), {
@@ -112,6 +113,7 @@ const AdminContextProvider = ({ children }) => {
 
       toast.success("Appointment cancelled");
 
+      // Cascade structural sync updates downstream
       await getDashData();
       await getAllAppointments();
     } catch (error) {
@@ -119,36 +121,40 @@ const AdminContextProvider = ({ children }) => {
       toast.error("Could not cancel appointment: " + error.message);
     }
   };
+
+  // 5. TOGGLE DOCTOR AVAILABILITY STATE MUTATOR
   const toggleDoctorAvailability = async (doctorId, currentAvailability) => {
-  try {
-    await updateDoc(doc(db, "users", doctorId), {
-      available: !currentAvailability,
-      updatedAt: new Date(),
-    });
+    try {
+      const nextAvailability = !currentAvailability;
+      await updateDoc(doc(db, "users", doctorId), {
+        available: nextAvailability,
+        updatedAt: new Date(),
+      });
 
-    toast.success(
-      !currentAvailability
-        ? "Doctor is now available"
-        : "Doctor is now unavailable"
-    );
+      toast.success(
+        nextAvailability
+          ? "Doctor is now available on public patient grids"
+          : "Doctor has been hidden from public search parameters"
+      );
 
-    await getAllDoctors();
-    await getDashData();
-  } catch (error) {
-    console.error(error);
-    toast.error("Could not update doctor availability: " + error.message);
-  }
-};
+      // Re-trigger clean state streams instantly
+      await getAllDoctors();
+      await getDashData();
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not update doctor availability: " + error.message);
+    }
+  };
 
   const value = {
     dashData,
     appointments,
     doctors,
-
+    loading,
+    setLoading,
     getDashData,
     getAllAppointments,
     getAllDoctors,
-
     cancelAppointment,
     toggleDoctorAvailability,
   };

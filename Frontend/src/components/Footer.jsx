@@ -1,9 +1,18 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { assets } from "../assets/assets_frontend/assets";
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaXTwitter } from "react-icons/fa6";
 import { FiPhone, FiMail, FiMapPin } from "react-icons/fi";
 
 const Footer = () => {
+  // Helper function to scroll to top
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
+
   return (
     <footer className="bg-slate-50 mt-24">
       <div className="md:mx-10 px-6 lg:px-0 pt-16">

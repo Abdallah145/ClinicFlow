@@ -13,7 +13,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
 
-  const { currentUser } = useAuth();
+ const { currentUser, userData } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -68,8 +68,8 @@ const Navbar = () => {
         {currentUser ? (
           <div className="flex items-center gap-2 group relative cursor-pointer">
             <img
-              className="w-8 rounded-full"
-              src={proile_pic}
+              className="w-8 h-8 rounded-full object-cover"
+              src={userData?.image || proile_pic}
               alt="Profile Picture"
             />
 
