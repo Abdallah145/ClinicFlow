@@ -19,12 +19,12 @@ const Banner = () => {
 
         <button
           onClick={() => {
-            navigate("/login");
+            navigate("/doctors");
             window.scrollTo(0, 0);
           }}
           className="bg-white text-primary font-semibold px-8 py-3 rounded-full w-fit mt-8 hover:scale-105 transition-all duration-300"
         >
-          Create Account
+          Book Appointment
         </button>
 
       </div>
