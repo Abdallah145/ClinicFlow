@@ -11,8 +11,11 @@ import MyProfile from "./page/MyProfile.jsx";
 import MyAppointments from "./page/MyAppointments.jsx";
 import Appointment from "./page/Appointment.jsx";
 import Footer from "./components/Footer.jsx";
+import SpecialtyChatbot from "./components/SpecialtyChatbot.jsx";
+
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
 import { AuthProvider } from "./context/AuthContext.jsx";
 import ProtectedRoute from "./components/ProtectedRoutes.jsx";
 import Unauthorized from "./page/Unauthorized.jsx";
@@ -28,10 +31,18 @@ const App = () => {
 
           <Routes>
             <Route path="/" element={<Home />} />
+
             <Route path="/doctors" element={<Doctors />} />
-            <Route path="/doctors/:speciality" element={<Doctors />} />
+
+            <Route
+              path="/doctors/:speciality"
+              element={<Doctors />}
+            />
+
             <Route path="/login" element={<Login />} />
+
             <Route path="/about" element={<About />} />
+
             <Route path="/contact" element={<Contact />} />
 
             <Route
@@ -61,13 +72,19 @@ const App = () => {
               }
             />
 
-            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route
+              path="/unauthorized"
+              element={<Unauthorized />}
+            />
           </Routes>
         </div>
 
         <div className="px-4 bg-slate-50 sm:px-[10%]">
           <Footer />
         </div>
+
+        {/* Healix Specialty Assistant */}
+        <SpecialtyChatbot />
       </div>
     </AuthProvider>
   );
