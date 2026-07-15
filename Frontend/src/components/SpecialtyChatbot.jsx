@@ -43,15 +43,21 @@ const SpecialtyChatbot = () => {
       setMessages((prev) => [
         ...prev,
         {
-          type: "bot",
-          text: result.message,
-          specialty:
-            result.type === "specialty" ||
-            result.type === "unknown"
-              ? result.specialty
-              : null,
-          emergency: result.type === "emergency",
-        },
+  type: "bot",
+  text: result.message,
+
+  specialty:
+    result.type === "specialty" ||
+    result.type === "unknown"
+      ? result.specialty
+      : null,
+
+  arabicName: result.arabicName,
+
+  language: result.language,
+
+  emergency: result.type === "emergency",
+},
       ]);
     }, 500);
 
@@ -160,27 +166,32 @@ const SpecialtyChatbot = () => {
                     : "justify-start"
                 }`}
               >
-                <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 ${
-                    message.type === "user"
-                      ? "bg-primary text-white rounded-br-md"
-                      : message.emergency
-                      ? "bg-red-50 text-red-700 border border-red-200 rounded-bl-md"
-                      : "bg-white text-gray-700 border border-gray-200 shadow-sm rounded-bl-md"
-                  }`}
-                >
+<div
+  dir={
+    message.language === "ar" || /[\u0600-\u06FF]/.test(message.text)
+      ? "rtl"
+      : "ltr"
+  }
+  className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm leading-6 ${
+    message.type === "user"
+      ? "bg-primary text-white rounded-br-md"
+      : message.emergency
+      ? "bg-red-50 text-red-700 border border-red-200 rounded-bl-md"
+      : "bg-white text-gray-700 border border-gray-200 shadow-sm rounded-bl-md"
+  }`}
+>
                   <p>{message.text}</p>
 
                   {/* View Doctors Button */}
                   {message.specialty && (
                     <button
-                      onClick={() =>
-                        handleViewDoctors(message.specialty)
-                      }
-                      className="mt-3 w-full bg-primary text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
-                    >
-                      View {message.specialty} Doctors
-                    </button>
+  onClick={() => handleViewDoctors(message.specialty)}
+  className="mt-3 w-full bg-primary text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+>
+  {message.language === "ar"
+    ? `عرض أطباء ${message.arabicName}`
+    : `View ${message.specialty} Doctors`}
+</button>
                   )}
                 </div>
               </div>
