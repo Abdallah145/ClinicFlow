@@ -33,6 +33,8 @@ const Doctors = () => {
     "Gastroenterologist",
   ];
 
+  
+
   useEffect(() => {
     let filtered = [...doctors];
 
@@ -81,7 +83,16 @@ const Doctors = () => {
     if (sortBy === "name") {
       filtered.sort((a, b) => a.name.localeCompare(b.name));
     }
+filtered.sort((a, b) => {
+  const aAvailable = a.available !== false;
+  const bAvailable = b.available !== false;
 
+  if (aAvailable === bAvailable) {
+    return 0;
+  }
+
+  return aAvailable ? -1 : 1;
+});
     setFilterDoc(filtered);
   }, [doctors, speciality, search, ratingFilter, availableOnly, sortBy]);
 

@@ -16,13 +16,20 @@ const reviews = item.reviews || 120;
 const stars = "⭐".repeat(Math.round(rating));
 
   return (
-    <div
-      onClick={() => {
-        navigate(`/appointment/${item.id || item._id}`);
-        window.scrollTo(0, 0);
-      }}
-      className="border border-blue-200 rounded-xl overflow-hidden cursor-pointer transition-all duration-300 hover:shadow-lg"
-    >
+<div
+  onClick={() => {
+    // لو الدكتور مش متاح، متفتحش صفحة الحجز
+    if (item.available === false) return;
+
+    navigate(`/appointment/${item.id || item._id}`);
+    window.scrollTo(0, 0);
+  }}
+  className={`border border-blue-200 rounded-xl overflow-hidden transition-all duration-300 ${
+    item.available === false
+      ? "cursor-not-allowed opacity-70"
+      : "cursor-pointer hover:shadow-lg hover:-translate-y-1"
+  }`}
+>
       {/* Doctor Image */}
       <div className="overflow-hidden bg-blue-50">
         <img
