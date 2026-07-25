@@ -141,3 +141,10 @@ vite.config.ts.timestamp-*
 
 Frontend/node_modules/
 Backend/node_modules/
+server/node_modules/
+
+# secret files and environment variables
+*.env
+.env*
+serviceAccountKey.json
+*serviceAccount*.json
