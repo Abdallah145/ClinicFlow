@@ -33,7 +33,9 @@ const OtpModal = ({ email, onVerified, onClose }) => {
         setErrorMsg('');
         try {
             // Points to your backend running on localhost:5000
-            await axios.post('http://localhost:5000/api/verify-otp', {
+            const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+
+            await axios.post(`${API_BASE_URL}/api/verify-otp`, {
                 email,
                 code: fullCode,
             });
